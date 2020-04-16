@@ -1,5 +1,7 @@
+import datetime
 import logging
 import os
+import uuid
 
 import google.auth
 import requests
@@ -44,6 +46,11 @@ def backup_firestore(request: Request):
             "reason": "Unspecified bucket"
         })
 
+    prefix = "{timestamp}U{id}".format(
+        timestamp=datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
+        id=str(uuid.uuid4())[:8]
+    )
+
     # create backup
     authorized_session = AuthorizedSession(credentials)
     response: requests.Response = authorized_session.post(
@@ -51,7 +58,7 @@ def backup_firestore(request: Request):
             project=os.getenv('GCP_PROJECT')
         ),
         json={
-            "outputUriPrefix": "gs://{bucket}".format(bucket=bucket_name)
+            "outputUriPrefix": "gs://{prefix}/{bucket}".format(prefix=prefix, bucket=bucket_name)
         }
     )
     logging.info({
