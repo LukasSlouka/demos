@@ -1,7 +1,7 @@
 steps:
   - id: deploy-function
     name: gcr.io/cloud-builders/gcloud
-    dir: firestore_backup
+    dir: firestore-backup
     args: ["functions",
            "deploy",
            "backup_firestore",
