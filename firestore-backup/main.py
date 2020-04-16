@@ -58,7 +58,8 @@ def backup_firestore(request: Request):
             project=os.getenv('GCP_PROJECT')
         ),
         json={
-            "outputUriPrefix": "gs://{bucket}/{prefix}".format(prefix=prefix, bucket=bucket_name)
+            "outputUriPrefix": "gs://{bucket}/{prefix}".format(prefix=prefix, bucket=bucket_name),
+            # "collectionIds": ["breweries"]
         }
     )
     logging.info({
