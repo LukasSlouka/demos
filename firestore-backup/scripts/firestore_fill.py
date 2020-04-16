@@ -1,4 +1,3 @@
-# TODO: set up 2 collections of data in firestore
 import uuid
 from firebase_admin import (
     firestore,
