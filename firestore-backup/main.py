@@ -63,7 +63,8 @@ def backup_firestore(request: Request):
     )
     logging.info({
         "message": "Firestore backup process finished",
-        "result": "success" if response.status_code == 200 else "failure"
+        "result": "success" if response.status_code == 200 else "failure",
+        "payload": response.text
     })
 
     if slack_client:
