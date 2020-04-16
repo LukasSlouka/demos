@@ -1,0 +1,14 @@
+steps:
+  - id: deploy-function
+    name: gcr.io/cloud-builders/gcloud
+    dir: firestore_backup
+    args: ["functions",
+           "deploy",
+           "backup_firestore",
+           "--runtime", "python37",
+           "--project", "${PROJECT_ID}",
+           "--set-env-vars", "BACKUP_BUCKET=${_BUCKET_NAME},SLACK_API_TOKEN=${_SLACK_API_TOKEN},SLACK_CHANNEL=${_SLACK_CHANNEL}",
+           "--region", "${_REGION}",
+           "--entry-point", "backup_firestore",
+           "--trigger-http"
+    ]

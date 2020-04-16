@@ -1,0 +1,5 @@
+.idea/
+firestore-backup/terraform/default_service_account.json
+firestore-backup/terraform/my.tfvars
+firestore-backup/terraform/plan*
+firestore-backup/terraform/.terraform
