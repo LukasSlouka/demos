@@ -17,4 +17,7 @@ resource "google_cloudbuild_trigger" "deploy_firestore_backup_cf" {
     _BUCKET_NAME = google_storage_bucket.backup_bucket.name
     _REGION = var.region
   }
+  depends_on = [
+    google_storage_bucket.backup_bucket
+  ]
 }
