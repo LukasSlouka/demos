@@ -147,7 +147,7 @@ def create_calendar_event():
 
         try:
             timestamp = check_timestamp(request_json.get('timestamp'))
-            if timestamp <= datetime.datetime.now():
+            if timestamp and timestamp <= datetime.datetime.now():
                 return bad_request("Invalid timestamp (must be a future timestamp)")
         except Exception as ex:
             return bad_request("Invalid timestamp ({})".format(str(ex)))
