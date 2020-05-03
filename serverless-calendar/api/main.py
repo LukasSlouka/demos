@@ -171,6 +171,11 @@ def calendar_api(api_request: Request):
 
     :param api_request: http request
     """
+    logging.info({
+        "message": "Processing incoming request",
+        "method": api_request.method,
+        "path": api_request.path
+    })
     with app.app_context():
 
         # construct headers
