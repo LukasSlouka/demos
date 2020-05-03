@@ -173,6 +173,7 @@ def create_calendar_event():
         proto_timestamp = timestamp_pb2.Timestamp()
         proto_timestamp.FromDatetime(schedule_time)
         task = {
+            'name': task_id,
             'http_request': {
                 'http_method': 'POST',
                 'url': os.getenv("EVENT_CALLBACK_URL"),
@@ -185,7 +186,6 @@ def create_calendar_event():
                     'id': task_id,
                     'repeat': repeat
                 }).encode(),
-                'name': task_id
             }
         }
         task_doc = {
