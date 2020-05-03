@@ -10,6 +10,6 @@ steps:
            "--region", "${_REGION}",
            "--set-env-vars", "SERVICE_ACCOUNT_EMAIL=${_SERVICE_ACCOUNT_EMAIL},EVENT_CALLBACK_URL=${_EVENT_CALLBACK_URL},QUEUE_NAME=${_QUEUE_NAME}",
            "--entry-point", "calendar_api",
-           "--trigger-http"
+           "--trigger-http",
            "--allow-unauthenticated"
     ]
