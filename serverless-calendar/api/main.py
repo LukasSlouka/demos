@@ -125,6 +125,9 @@ def create_calendar_event():
     if timestamp and timedelta:
         return bad_request("timestamp and timedelta are mutually exclusive")
 
+    if not timedelta and not timedelta:
+        return bad_request("one of timestamp and timedelta must be set")
+
     # create new task
     task_id = str(uuid.uuid4())
     schedule_time = datetime.datetime.now() + datetime.timedelta(seconds=timedelta)
