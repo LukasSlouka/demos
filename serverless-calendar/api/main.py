@@ -143,7 +143,7 @@ def create_calendar_event():
             "request": request_json
         })
 
-        message = request.get('message', "Empty Message")
+        message = request_json.get('message', "Empty Message")
 
         try:
             timestamp = check_timestamp(request_json.get('timestamp'))
@@ -152,11 +152,11 @@ def create_calendar_event():
         except Exception as ex:
             return bad_request("Invalid timestamp ({})".format(str(ex)))
 
-        timedelta = request.get('timedelta')
+        timedelta = request_json.get('timedelta')
         if timedelta is not None and not isinstance(timedelta, int):
             return bad_request("Invalid timedelta (Must be an integer)")
 
-        repeat = request.get('repeat')
+        repeat = request_json.get('repeat')
         if repeat is not None and not isinstance(repeat, int):
             return bad_request("Invalid repeat (Must be an integer)")
 
