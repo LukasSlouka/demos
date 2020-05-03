@@ -8,6 +8,7 @@ from firebase_admin import (
 from flask import (
     Flask,
     Request,
+    request,
 )
 from google.cloud import (
     logging as cloud_logging,
@@ -75,16 +76,15 @@ def get_calendar_events():
 
     :returns: list of all calendar events
     """
-    return "yes", 200
-    # logging.info({
-    #     "method": request.method,
-    #     "endpoint": request.endpoint,
-    # })
-    # response = {
-    #     doc.to_dict()
-    #     for doc in db.fs_client.collection('events').stream()
-    # }
-    # return response, 200
+    logging.info({
+        "method": request.method,
+        "endpoint": request.endpoint,
+    })
+    response = {
+        doc.to_dict()
+        for doc in db.fs_client.collection('events').stream()
+    }
+    return response, 200
 
 #
 # @app.route('/', methods=['POST'])
