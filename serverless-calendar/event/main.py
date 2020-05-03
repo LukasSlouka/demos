@@ -36,30 +36,33 @@ def calendar_event_callback(request: Request):
     :returns: empty response + status code
     """
     try:
-        request_json = request.get_json(silent=True)
-        logging.info(request_json)
-        task_id = request_json.get('id')
-        if not task_id:
-            logging.error('Received cloud task without ID')
-            return {}, 500
-
-        logging.info({
-            "message": "Task execution started",
-            "id": request_json.get('id'),
-            "data": request_json
-        })
-
-        db.collection('events').documents(task_id).update({
-            'processed': True
-        })
-
-        if slack_client and 'message' in request_json:
-            slack_client.chat_postMessage(
-                channel=slack_channel,
-                text=":exclamation: {} :exclamation: (ID: {})".format(request_json['message'], task_id)
-            )
-
-        return dict(id=task_id), 200
+        logging.info(request.data)
+        logging.info(request.args)
+        logging.info(request.headers)
+        # request_json = request.get_json(silent=True)
+        # logging.info(request_json)
+        # task_id = request_json.get('id')
+        # if not task_id:
+        #     logging.error('Received cloud task without ID')
+        #     return {}, 500
+        #
+        # logging.info({
+        #     "message": "Task execution started",
+        #     "id": request_json.get('id'),
+        #     "data": request_json
+        # })
+        #
+        # db.collection('events').documents(task_id).update({
+        #     'processed': True
+        # })
+        #
+        # if slack_client and 'message' in request_json:
+        #     slack_client.chat_postMessage(
+        #         channel=slack_channel,
+        #         text=":exclamation: {} :exclamation: (ID: {})".format(request_json['message'], task_id)
+        #     )
+        #
+        # return dict(id=task_id), 200
     except Exception as ex:
         logging.exception("Something went wrong")
         return {}, 500
