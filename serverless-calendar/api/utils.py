@@ -13,7 +13,7 @@ def cloud_function_entry_point(flask_app: Flask, api_request: Request):
     dispatching the request.
 
     :param flask_app: flask application
-    :param api_request: httpi request
+    :param api_request: http request
     :return:
     """
     with flask_app.app_context():
