@@ -170,7 +170,7 @@ def create_calendar_event():
         task_id = str(uuid.uuid4())
         schedule_time = datetime.datetime.now() + datetime.timedelta(seconds=timedelta)
         proto_timestamp = timestamp_pb2.Timestamp()
-        proto_timestamp.FromDateTime(schedule_time)
+        proto_timestamp.FromDatetime(schedule_time)
         task = {
             'http_request': {
                 'http_method': 'POST',
