@@ -135,69 +135,73 @@ def create_calendar_event():
             raise ValueError('Must be a string')
         return parse(value)
 
-    request_json = request.get_json(silent=True)
-    logging.info({
-        "method": request.method,
-        "endpoint": request.endpoint,
-        "request": request_json
-    })
-
-    message = request.get('message', "Empty Message")
-
     try:
-        timestamp = check_timestamp(request_json.get('timestamp'))
-        if timestamp <= datetime.datetime.now():
-            return bad_request("Invalid timestamp (must be a future timestamp)")
-    except Exception as ex:
-        return bad_request("Invalid timestamp ({})".format(str(ex)))
+        request_json = request.get_json(silent=True)
+        logging.info({
+            "method": request.method,
+            "endpoint": request.endpoint,
+            "request": request_json
+        })
 
-    timedelta = request.get('timedelta')
-    if timedelta is not None and not isinstance(timedelta, int):
-        return bad_request("Invalid timedelta (Must be an integer)")
+        message = request.get('message', "Empty Message")
 
-    repeat = request.get('repeat')
-    if repeat is not None and not isinstance(repeat, int):
-        return bad_request("Invalid repeat (Must be an integer)")
+        try:
+            timestamp = check_timestamp(request_json.get('timestamp'))
+            if timestamp <= datetime.datetime.now():
+                return bad_request("Invalid timestamp (must be a future timestamp)")
+        except Exception as ex:
+            return bad_request("Invalid timestamp ({})".format(str(ex)))
 
-    if timestamp and timedelta:
-        return bad_request("timestamp and timedelta are mutually exclusive")
+        timedelta = request.get('timedelta')
+        if timedelta is not None and not isinstance(timedelta, int):
+            return bad_request("Invalid timedelta (Must be an integer)")
 
-    if not timedelta and not timedelta:
-        return bad_request("one of timestamp and timedelta must be set")
+        repeat = request.get('repeat')
+        if repeat is not None and not isinstance(repeat, int):
+            return bad_request("Invalid repeat (Must be an integer)")
 
-    # create new task
-    task_id = str(uuid.uuid4())
-    schedule_time = datetime.datetime.now() + datetime.timedelta(seconds=timedelta)
-    proto_timestamp = timestamp_pb2.Timestamp()
-    proto_timestamp.FromDateTime(schedule_time)
-    task = {
-        'http_request': {
-            'http_method': 'POST',
-            'url': os.getenv("EVENT_CALLBACK_URL"),
-            'oidc_token': {
-                'service_account_email': os.getenv('SERVICE_ACCOUNT_EMAIL')
-            },
-            'body': {
-                'message': message,
-                'timedelta': timedelta,
-                'id': task_id,
-                'repeat': repeat
-            },
-            'name': task_id
+        if timestamp and timedelta:
+            return bad_request("timestamp and timedelta are mutually exclusive")
+
+        if not timedelta and not timedelta:
+            return bad_request("one of timestamp and timedelta must be set")
+
+        # create new task
+        task_id = str(uuid.uuid4())
+        schedule_time = datetime.datetime.now() + datetime.timedelta(seconds=timedelta)
+        proto_timestamp = timestamp_pb2.Timestamp()
+        proto_timestamp.FromDateTime(schedule_time)
+        task = {
+            'http_request': {
+                'http_method': 'POST',
+                'url': os.getenv("EVENT_CALLBACK_URL"),
+                'oidc_token': {
+                    'service_account_email': os.getenv('SERVICE_ACCOUNT_EMAIL')
+                },
+                'body': {
+                    'message': message,
+                    'timedelta': timedelta,
+                    'id': task_id,
+                    'repeat': repeat
+                },
+                'name': task_id
+            }
         }
-    }
-    task_doc = {
-        'processed': False,
-        'schedule_time': schedule_time.isoformat(),
-        **task,
-    }
-    db.collection('events').document(task_id).set(task_doc)
-    response = client.create_task(
-        parent=task_queue,
-        task={
-            'schedule_time': proto_timestamp,
+        task_doc = {
+            'processed': False,
+            'schedule_time': schedule_time.isoformat(),
             **task,
         }
-    )
-    print(response)
-    return task_doc, 201
+        db.collection('events').document(task_id).set(task_doc)
+        response = client.create_task(
+            parent=task_queue,
+            task={
+                'schedule_time': proto_timestamp,
+                **task,
+            }
+        )
+        print(response)
+        return task_doc, 201
+    except Exception as ex:
+        logging.exception('Something went wrong')
+        return {}, 500
