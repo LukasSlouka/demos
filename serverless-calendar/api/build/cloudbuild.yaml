@@ -1,0 +1,15 @@
+steps:
+  - id: deploy-function
+    name: gcr.io/cloud-builders/gcloud
+    dir: serverless-calendar/api
+    args: ["functions",
+           "deploy",
+           "calendar_api",
+           "--runtime", "python37",
+           "--project", "${PROJECT_ID}",
+           "--region", "${_REGION}",
+           "--set-env-vars", "SERVICE_ACCOUNT_EMAIL=${_SERVICE_ACCOUNT_EMAIL},EVENT_CALLBACK_URL=${_EVENT_CALLBACK_URL},QUEUE_NAME=${_QUEUE_NAME}",
+           "--entry-point", "calendar_api",
+           "--trigger-http"
+           "--allow-unauthenticated"
+    ]
