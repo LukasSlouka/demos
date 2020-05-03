@@ -8,7 +8,7 @@ steps:
            "--runtime", "python37",
            "--project", "${PROJECT_ID}",
            "--region", "${_REGION}",
-           "--entry-point", "calendar_event_callback",
            "--set-env-vars", "SLACK_API_TOKEN=${_SLACK_API_TOKEN},SLACK_CHANNEL=${_SLACK_CHANNEL}",
+           "--entry-point", "calendar_event_callback",
            "--trigger-http"
     ]

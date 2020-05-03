@@ -1,7 +1,7 @@
 resource "google_cloudbuild_trigger" "deploy_calendar_api_cf" {
   name = "deploy-calendar-api"
   description = "Deploys calendar API cloud function"
-  filename = "serverless-calendar/api/build/cloudbuild.yaml"
+  filename = "serverless-calendar/api/cloudbuild.yaml"
   trigger_template {
     branch_name = "^master$"
     repo_name = var.build_github_repository
@@ -22,7 +22,7 @@ resource "google_cloudbuild_trigger" "deploy_calendar_api_cf" {
 resource "google_cloudbuild_trigger" "deploy_calendar_notification_cf" {
   name = "deploy-calendar-notification"
   description = "Deploys calendar event notification cloud function"
-  filename = "serverless-calendar/event/build/cloudbuild.yaml"
+  filename = "serverless-calendar/event/cloudbuild.yaml"
   trigger_template {
     branch_name = "^master$"
     repo_name = var.build_github_repository
