@@ -81,8 +81,7 @@ def get_calendar_events():
         "endpoint": request.endpoint,
     })
     response = {
-        doc.to_dict()
-        for doc in db.fs_client.collection('events').stream()
+        'objects': [doc.to_dict() for doc in db.fs_client.collection('events').stream()]
     }
     return response, 200
 
