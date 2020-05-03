@@ -22,8 +22,6 @@ from google.cloud import (
 from google.cloud.firestore_v1 import Client
 from google.protobuf import timestamp_pb2
 
-from utils import cloud_function_entry_point
-
 log_client = cloud_logging.Client()
 log_handler = log_client.get_default_handler()
 cloud_logger = logging.getLogger("cloudLogger")
@@ -187,4 +185,4 @@ def calendar_api(api_request: Request):
         "method": api_request.method,
         "path": api_request.path
     })
-    return cloud_function_entry_point(app, api_request=api_request)
+    # return cloud_function_entry_point(app, api_request=api_request)
