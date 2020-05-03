@@ -3,6 +3,7 @@ import logging
 import os
 import typing
 import uuid
+import json
 
 from dateutil.parser import parse
 from firebase_admin import (
@@ -181,10 +182,13 @@ def create_calendar_event():
             'http_request': {
                 'http_method': 'POST',
                 'url': os.getenv("EVENT_CALLBACK_URL"),
+                'headers': {
+                    "Content-Type": "application/json"
+                },
                 'oidc_token': {
                     'service_account_email': os.getenv('SERVICE_ACCOUNT_EMAIL')
                 },
-                'body': str({
+                'body': json.dumps({
                     'message': message,
                     'timedelta': timedelta,
                     'id': task_id,
@@ -205,8 +209,7 @@ def create_calendar_event():
                 **task,
             }
         )
-        print(response)
-        return task_doc, 201
+        return {"message": "yay"}, 201
     except Exception as ex:
         logging.exception('Something went wrong')
-        return {}, 500
+        return {"message": "oh boy!"}, 500

@@ -23,6 +23,14 @@ resource "google_project_iam_member" "task_api_sa_cloud_tasks_enqueuer" {
   ]
 }
 
+resource "google_project_iam_member" "task_api_sa_cloud_function_invoker" {
+  role = "roles/cloudfunctions.invoker"
+  member = "serviceAccount:${google_service_account.task_api_service_account.email}"
+  depends_on = [
+    google_service_account_key.task_api_service_account,
+  ]
+}
+
 // Cloud build roles
 resource "google_project_iam_member" "cloudbuild_cloud_functions_admin_role" {
   role = "roles/cloudfunctions.admin"
