@@ -193,7 +193,7 @@ def create_calendar_event():
                     'timedelta': timedelta,
                     'id': task_id,
                     'repeat': repeat
-                }).encode(),
+                }).encode('utf-8'),
             }
         }
         task_doc = {
