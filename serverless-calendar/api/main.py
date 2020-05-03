@@ -17,7 +17,7 @@ from flask import (
 from flask_cors import CORS
 from google.cloud import (
     logging as cloud_logging,
-    tasks,
+    # tasks,
 )
 from google.protobuf import timestamp_pb2
 from werkzeug.datastructures import Headers
@@ -33,12 +33,12 @@ app = Flask(__name__)
 CORS(app)
 
 # Cloud tasks setup
-client = tasks.CloudTasksClient()
-task_queue = client.queue_path(
-    project=os.getenv("GCP_PROJECT"),
-    location=os.getenv("FUNCTION_REGION"),
-    queue=os.getenv("QUEUE_NAME")
-)
+# client = tasks.CloudTasksClient()
+# task_queue = client.queue_path(
+#     project=os.getenv("GCP_PROJECT"),
+#     location=os.getenv("FUNCTION_REGION"),
+#     queue=os.getenv("QUEUE_NAME")
+# )
 
 # Firebase and Firestore setup
 fire_app = initialize_app()
@@ -155,14 +155,14 @@ def create_calendar_event():
         **task,
     }
     db.collection('events').document(task_id).set(task_doc)
-    response = client.create_task(
-        parent=task_queue,
-        task={
-            'schedule_time': proto_timestamp,
-            **task,
-        }
-    )
-    print(response)
+    # response = client.create_task(
+    #     parent=task_queue,
+    #     task={
+    #         'schedule_time': proto_timestamp,
+    #         **task,
+    #     }
+    # )
+    # print(response)
     return task_doc, 201
 
 
