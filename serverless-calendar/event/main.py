@@ -36,6 +36,7 @@ def calendar_event_callback(request: Request):
     :returns: empty response + status code
     """
     request_json = request.get_json(silent=True)
+    logging.info(request_json)
     task_id = request_json.get('id')
     if not task_id:
         logging.error('Received cloud task without ID')

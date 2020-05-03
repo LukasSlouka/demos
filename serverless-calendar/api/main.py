@@ -12,6 +12,7 @@ from firebase_admin import (
 from flask import (
     Flask,
     Request,
+    jsonify,
     request,
 )
 from flask_cors import CORS
@@ -178,12 +179,12 @@ def create_calendar_event():
                 'oidc_token': {
                     'service_account_email': os.getenv('SERVICE_ACCOUNT_EMAIL')
                 },
-                'body': {
+                'body': str({
                     'message': message,
                     'timedelta': timedelta,
                     'id': task_id,
                     'repeat': repeat
-                },
+                }).encode(),
                 'name': task_id
             }
         }
