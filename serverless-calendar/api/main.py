@@ -12,7 +12,6 @@ from firebase_admin import (
 from flask import (
     Flask,
     Request,
-    jsonify,
     request,
 )
 from flask_cors import CORS
@@ -35,12 +34,12 @@ app = Flask(__name__)
 CORS(app)
 
 # Cloud tasks setup
+project_name = os.getenv("GCP_PROJECT")
+location = os.getenv("FUNCTION_REGION")
+queue = os.getenv("QUEUE_NAME")
+
 client = tasks.CloudTasksClient()
-task_queue = client.queue_path(
-    project=os.getenv("GCP_PROJECT"),
-    location=os.getenv("FUNCTION_REGION"),
-    queue=os.getenv("QUEUE_NAME")
-)
+task_queue = client.queue_path(project_name, location, queue)
 
 # Firebase and Firestore setup
 firebase_app = initialize_app()
@@ -173,7 +172,12 @@ def create_calendar_event():
         proto_timestamp = timestamp_pb2.Timestamp()
         proto_timestamp.FromDatetime(schedule_time)
         task = {
-            'name': task_id,
+            'name': 'projects/{project_name}/locations/{location}/queues/{queue}/tasks/{id}'.format(
+                project_name=project_name,
+                location=location,
+                queue=queue,
+                id=task_id
+            ),
             'http_request': {
                 'http_method': 'POST',
                 'url': os.getenv("EVENT_CALLBACK_URL"),
