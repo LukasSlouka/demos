@@ -43,11 +43,12 @@ class CalendarTask:
 
     @property
     def name(self) -> str:
-        return 'projects/{project_name}/locations/{location}/queues/{queue}/tasks/{id}'.format(
+        return 'projects/{project_name}/locations/{location}/queues/{queue}/tasks/{id}_{count}'.format(
             project_name=project_name,
             location=location,
             queue=queue,
-            id=self.id
+            id=self.id,
+            count=self.repeat
         )
 
     @property
