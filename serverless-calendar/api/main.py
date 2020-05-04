@@ -25,7 +25,6 @@ from google.cloud import (
     tasks,
 )
 from google.cloud.firestore import Client
-from google.protobuf import timestamp_pb2
 from google.protobuf.timestamp_pb2 import Timestamp
 from werkzeug.datastructures import Headers
 
@@ -56,7 +55,7 @@ db: Client = firestore.client(firebase_app)
 class CalendarTask:
     id: str = field(default_factory=lambda: str(uuid.uuid4()))
     message: str = 'Empty message'
-    timestamp: datetime = None
+    timestamp: datetime.datetime = None
     timedelta: int = None
     repeat: int = 0
 
@@ -83,7 +82,7 @@ class CalendarTask:
 
     @property
     def schedule_time_proto(self) -> Timestamp:
-        proto_timestamp = timestamp_pb2.Timestamp()
+        proto_timestamp = Timestamp()
         proto_timestamp.FromDatetime(self.schedule_time)
         return proto_timestamp
 
@@ -100,6 +99,7 @@ class CalendarTask:
     def payload_blob(self) -> bytes:
         return json.dumps(self.payload_dict).encode('utf-8')
 
+    @property
     def _dict_base(self) -> dict:
         return {
             'name': self.name,
@@ -246,7 +246,7 @@ def create_calendar_event():
     if repeat is not None and not isinstance(repeat, int):
         return bad_request("Invalid repeat (Must be an integer)")
 
-    if not timedelta and not timedelta:
+    if not timedelta and not timestamp:
         return bad_request("one of timestamp and timedelta must be set")
 
     # create new task

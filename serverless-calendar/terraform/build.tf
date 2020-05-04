@@ -35,6 +35,9 @@ resource "google_cloudbuild_trigger" "deploy_calendar_notification_cf" {
   substitutions = {
     _SLACK_API_TOKEN = var.slack_api_token
     _SLACK_CHANNEL = var.slack_notification_channel
+    _SERVICE_ACCOUNT_EMAIL = google_service_account.task_api_service_account.email
+    _EVENT_CALLBACK_URL = "https://${var.region}-${var.project_id}.cloudfunctions.net/calendar_event_callback"
+    _QUEUE_NAME = google_cloud_tasks_queue.slack_notifications.name
     _REGION = var.region
   }
 }
