@@ -7,7 +7,7 @@ resource "google_cloudbuild_trigger" "deploy_calendar_api_cf" {
     repo_name = var.build_github_repository
   }
   included_files = [
-    "serverless-calendar/api/build/**",
+    "serverless-calendar/api/cloudbuild.yaml",
     "serverless-calendar/api/main.py",
     "serverless-calendar/api/requirements.txt",
   ]
@@ -28,7 +28,7 @@ resource "google_cloudbuild_trigger" "deploy_calendar_notification_cf" {
     repo_name = var.build_github_repository
   }
   included_files = [
-    "serverless-calendar/event/build/**",
+    "serverless-calendar/event/cloudbuild.yaml",
     "serverless-calendar/event/main.py",
     "serverless-calendar/event/requirements.txt",
   ]
