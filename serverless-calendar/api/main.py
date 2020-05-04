@@ -4,6 +4,10 @@ import logging
 import os
 import typing
 import uuid
+from dataclasses import (
+    dataclass,
+    field,
+)
 
 from dateutil.parser import parse
 from firebase_admin import (
@@ -22,6 +26,7 @@ from google.cloud import (
 )
 from google.cloud.firestore import Client
 from google.protobuf import timestamp_pb2
+from google.protobuf.timestamp_pb2 import Timestamp
 from werkzeug.datastructures import Headers
 
 log_client = cloud_logging.Client()
@@ -45,6 +50,87 @@ task_queue = client.queue_path(project_name, location, queue)
 # Firebase and Firestore setup
 firebase_app = initialize_app()
 db: Client = firestore.client(firebase_app)
+
+
+@dataclass
+class CalendarTask:
+    id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    message: str = 'Empty message'
+    timestamp: datetime = None
+    timedelta: int = None
+    repeat: int = 0
+
+    @property
+    def name(self) -> str:
+        return 'projects/{project_name}/locations/{location}/queues/{queue}/tasks/{id}'.format(
+            project_name=project_name,
+            location=location,
+            queue=queue,
+            id=self.id
+        )
+
+    @property
+    def callback_url(self) -> str:
+        return os.getenv("EVENT_CALLBACK_URL")
+
+    @property
+    def service_account_email(self) -> str:
+        return os.getenv('SERVICE_ACCOUNT_EMAIL')
+
+    @property
+    def schedule_time(self) -> datetime:
+        return self.timestamp or datetime.datetime.now() + datetime.timedelta(seconds=self.timedelta)
+
+    @property
+    def schedule_time_proto(self) -> Timestamp:
+        proto_timestamp = timestamp_pb2.Timestamp()
+        proto_timestamp.FromDatetime(self.schedule_time)
+        return proto_timestamp
+
+    @property
+    def payload_dict(self) -> dict:
+        return {
+            'message': self.message,
+            'timedelta': self.timedelta,
+            'id': self.id,
+            'repeat': self.repeat
+        }
+
+    @property
+    def payload_blob(self) -> bytes:
+        return json.dumps(self.payload_dict).encode('utf-8')
+
+    def _dict_base(self) -> dict:
+        return {
+            'name': self.name,
+            'http_request': {
+                'http_method': 'POST',
+                'url': self.callback_url,
+                'headers': {
+                    "Content-Type": "application/json"
+                },
+                'oidc_token': {
+                    'service_account_email': self.service_account_email
+                }
+            }
+        }
+
+    def to_dict(self) -> dict:
+        doc: dict = {
+            **self._dict_base,
+            'processed': False,
+            'schedule_time': self.schedule_time.isoformat(),
+        }
+        doc['http_request']['body'] = self.payload_dict
+        return doc
+
+    def to_task_request(self) -> dict:
+        doc: dict = {
+            **self._dict_base,
+            'schedule_time': self.schedule_time_proto
+        }
+        doc['http_request']['body'] = self.payload_blob
+        return doc
 
 
 def calendar_api(api_request: Request):
@@ -160,52 +246,20 @@ def create_calendar_event():
     if repeat is not None and not isinstance(repeat, int):
         return bad_request("Invalid repeat (Must be an integer)")
 
-    if timestamp and timedelta:
-        return bad_request("timestamp and timedelta are mutually exclusive")
-
     if not timedelta and not timedelta:
         return bad_request("one of timestamp and timedelta must be set")
 
     # create new task
-    task_id = str(uuid.uuid4())
-    schedule_time = datetime.datetime.now() + datetime.timedelta(seconds=timedelta)
-    proto_timestamp = timestamp_pb2.Timestamp()
-    proto_timestamp.FromDatetime(schedule_time)
-    task = {
-        'name': 'projects/{project_name}/locations/{location}/queues/{queue}/tasks/{id}'.format(
-            project_name=project_name,
-            location=location,
-            queue=queue,
-            id=task_id
-        ),
-        'http_request': {
-            'http_method': 'POST',
-            'url': os.getenv("EVENT_CALLBACK_URL"),
-            'headers': {
-                "Content-Type": "application/json"
-            },
-            'oidc_token': {
-                'service_account_email': os.getenv('SERVICE_ACCOUNT_EMAIL')
-            },
-            'body': json.dumps({
-                'message': message,
-                'timedelta': timedelta,
-                'id': task_id,
-                'repeat': repeat
-            }).encode('utf-8'),
-        }
-    }
-    task_doc = {
-        'processed': False,
-        'schedule_time': schedule_time.isoformat(),
-        **task,
-    }
-    db.collection('events').document(task_id).set(task_doc)
+    task = CalendarTask(
+        timestamp=timestamp,
+        timedelta=timedelta,
+        repeat=repeat,
+        message=message
+    )
+    task_dict = task.to_dict()
+    db.collection('events').document(task.id).set(task_dict)
     client.create_task(
         parent=task_queue,
-        task={
-            'schedule_time': proto_timestamp,
-            **task,
-        }
+        task=task.to_task_request()
     )
-    return task_doc, 201
+    return task_dict, 201
