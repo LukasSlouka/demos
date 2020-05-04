@@ -40,15 +40,15 @@ def calendar_event_callback(request: Request):
         logging.error('Received cloud task without ID')
         return
 
-    # logging.info({
-    #     "message": "Task execution started",
-    #     "id": request_json.get('id'),
-    #     "data": request_json
-    # })
+    logging.info({
+        "message": "Task execution started",
+        "id": request_json.get('id'),
+        "data": request_json
+    })
 
-    # db.collection('events').documents(task_id).update({
-    #     'processed': True
-    # })
+    db.collection('events').document(task_id).update({
+        'processed': True
+    })
 
     if slack_client and 'message' in request_json:
         slack_client.chat_postMessage(

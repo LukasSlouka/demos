@@ -1,9 +1,9 @@
 import datetime
+import json
 import logging
 import os
 import typing
 import uuid
-import json
 
 from dateutil.parser import parse
 from firebase_admin import (
@@ -136,80 +136,76 @@ def create_calendar_event():
             raise ValueError('Must be a string')
         return parse(value)
 
+    request_json = request.get_json(silent=True)
+    logging.info({
+        "method": request.method,
+        "endpoint": request.endpoint,
+        "request": request_json
+    })
+
+    message = request_json.get('message', "Empty Message")
+
     try:
-        request_json = request.get_json(silent=True)
-        logging.info({
-            "method": request.method,
-            "endpoint": request.endpoint,
-            "request": request_json
-        })
+        timestamp = check_timestamp(request_json.get('timestamp'))
+        if timestamp and timestamp <= datetime.datetime.now():
+            return bad_request("Invalid timestamp (must be a future timestamp)")
+    except Exception as ex:
+        return bad_request("Invalid timestamp ({})".format(str(ex)))
 
-        message = request_json.get('message', "Empty Message")
+    timedelta = request_json.get('timedelta')
+    if timedelta is not None and not isinstance(timedelta, int):
+        return bad_request("Invalid timedelta (Must be an integer)")
 
-        try:
-            timestamp = check_timestamp(request_json.get('timestamp'))
-            if timestamp and timestamp <= datetime.datetime.now():
-                return bad_request("Invalid timestamp (must be a future timestamp)")
-        except Exception as ex:
-            return bad_request("Invalid timestamp ({})".format(str(ex)))
+    repeat = request_json.get('repeat')
+    if repeat is not None and not isinstance(repeat, int):
+        return bad_request("Invalid repeat (Must be an integer)")
 
-        timedelta = request_json.get('timedelta')
-        if timedelta is not None and not isinstance(timedelta, int):
-            return bad_request("Invalid timedelta (Must be an integer)")
+    if timestamp and timedelta:
+        return bad_request("timestamp and timedelta are mutually exclusive")
 
-        repeat = request_json.get('repeat')
-        if repeat is not None and not isinstance(repeat, int):
-            return bad_request("Invalid repeat (Must be an integer)")
+    if not timedelta and not timedelta:
+        return bad_request("one of timestamp and timedelta must be set")
 
-        if timestamp and timedelta:
-            return bad_request("timestamp and timedelta are mutually exclusive")
-
-        if not timedelta and not timedelta:
-            return bad_request("one of timestamp and timedelta must be set")
-
-        # create new task
-        task_id = str(uuid.uuid4())
-        schedule_time = datetime.datetime.now() + datetime.timedelta(seconds=timedelta)
-        proto_timestamp = timestamp_pb2.Timestamp()
-        proto_timestamp.FromDatetime(schedule_time)
-        task = {
-            'name': 'projects/{project_name}/locations/{location}/queues/{queue}/tasks/{id}'.format(
-                project_name=project_name,
-                location=location,
-                queue=queue,
-                id=task_id
-            ),
-            'http_request': {
-                'http_method': 'POST',
-                'url': os.getenv("EVENT_CALLBACK_URL"),
-                'headers': {
-                    "Content-Type": "application/json"
-                },
-                'oidc_token': {
-                    'service_account_email': os.getenv('SERVICE_ACCOUNT_EMAIL')
-                },
-                'body': json.dumps({
-                    'message': message,
-                    'timedelta': timedelta,
-                    'id': task_id,
-                    'repeat': repeat
-                }).encode('utf-8'),
-            }
+    # create new task
+    task_id = str(uuid.uuid4())
+    schedule_time = datetime.datetime.now() + datetime.timedelta(seconds=timedelta)
+    proto_timestamp = timestamp_pb2.Timestamp()
+    proto_timestamp.FromDatetime(schedule_time)
+    task = {
+        'name': 'projects/{project_name}/locations/{location}/queues/{queue}/tasks/{id}'.format(
+            project_name=project_name,
+            location=location,
+            queue=queue,
+            id=task_id
+        ),
+        'http_request': {
+            'http_method': 'POST',
+            'url': os.getenv("EVENT_CALLBACK_URL"),
+            'headers': {
+                "Content-Type": "application/json"
+            },
+            'oidc_token': {
+                'service_account_email': os.getenv('SERVICE_ACCOUNT_EMAIL')
+            },
+            'body': json.dumps({
+                'message': message,
+                'timedelta': timedelta,
+                'id': task_id,
+                'repeat': repeat
+            }).encode('utf-8'),
         }
-        task_doc = {
-            'processed': False,
-            'schedule_time': schedule_time.isoformat(),
+    }
+    task_doc = {
+        'processed': False,
+        'schedule_time': schedule_time.isoformat(),
+        **task,
+    }
+    db.collection('events').document(task_id).set(task_doc)
+    client.create_task(
+        parent=task_queue,
+        task={
+            'schedule_time': proto_timestamp,
             **task,
         }
-        db.collection('events').document(task_id).set(task_doc)
-        response = client.create_task(
-            parent=task_queue,
-            task={
-                'schedule_time': proto_timestamp,
-                **task,
-            }
-        )
-        return {"message": "yay"}, 201
-    except Exception as ex:
-        logging.exception('Something went wrong')
-        return {"message": "oh boy!"}, 500
+    )
+    return task_doc, 201
