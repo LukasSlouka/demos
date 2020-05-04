@@ -137,12 +137,12 @@ def calendar_event_callback(request: Request):
         )
 
         # this should be in transaction but for demo purposes it does not really matter
-        task_doc = db.collection('events').document(task_id).to_dict()
+        task_doc = db.collection('events').document(task_id).get().to_dict()
         db.collection('events').document(task_id).update({
             'repeatedCount': task_doc.get('repeatedCount', 0) + 1
         })
     else:
-        task_doc = db.collection('events').document(task_id).to_dict()
+        task_doc = db.collection('events').document(task_id).get().to_dict()
         db.collection('events').document(task_id).update({
             'processed': True,
             'repeatedCount': task_doc.get('repeatedCount', 0) + 1
