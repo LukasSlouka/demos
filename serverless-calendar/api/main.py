@@ -247,7 +247,7 @@ def create_calendar_event():
         return bad_request("Invalid repeat (Must be an integer)")
 
     if not timedelta and not timestamp:
-        return bad_request("one of timestamp and timedelta must be set")
+        return bad_request("at least one of timestamp and timedelta must be set")
 
     # create new task
     task = CalendarTask(

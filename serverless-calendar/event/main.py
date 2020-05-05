@@ -10,6 +10,11 @@ from firebase_admin import (
 )
 from flask import Request
 from google.cloud import tasks
+from google.cloud.firestore import DocumentReference
+from google.cloud.firestore_v1.transaction import (
+    Transaction,
+    transactional,
+)
 from google.protobuf.timestamp_pb2 import Timestamp
 from slack import WebClient
 
@@ -108,6 +113,7 @@ def calendar_event_callback(request: Request):
         })
         return
 
+    # load task payload data
     request_json = json.loads(request.data)
     task_id = request_json.get('id')
     task_message = request_json.get('message')
@@ -120,12 +126,12 @@ def calendar_event_callback(request: Request):
 
     logging.info({
         "message": "Task execution started",
-        "id": request_json.get('id'),
         "data": request_json
     })
 
     # create next task if repeat is set
-    if task_repeat:
+    finished_processing = False
+    if task_repeat and task_repeat > 1:
         next_task = CalendarTask(
             id=task_id,
             timedelta=task_delta,
@@ -136,19 +142,18 @@ def calendar_event_callback(request: Request):
             parent=task_queue,
             task=next_task.to_task_request()
         )
-
-        # this should be in transaction but for demo purposes it does not really matter
-        task_doc = db.collection('events').document(task_id).get().to_dict()
-        db.collection('events').document(task_id).update({
-            'repeatedCount': task_doc.get('repeatedCount', 0) + 1
-        })
     else:
-        task_doc = db.collection('events').document(task_id).get().to_dict()
-        db.collection('events').document(task_id).update({
-            'processed': True,
-            'repeatedCount': task_doc.get('repeatedCount', 0) + 1
-        })
+        finished_processing = True
 
+    # increment repeated counter
+    transaction = db.transaction()
+    increment_repeated_counter(
+        transaction,
+        db.collection('events').document(task_id),
+        finished_processing
+    )
+
+    # send slack message
     if slack_client and 'message' in request_json:
         slack_client.chat_postMessage(
             channel=slack_channel,
@@ -158,3 +163,22 @@ def calendar_event_callback(request: Request):
                 repetition=' [repetitions left: {}]'.format(task_repeat) if task_repeat else ''
             )
         )
+
+
+@transactional
+def increment_repeated_counter(
+        transaction: Transaction,
+        event_reference: DocumentReference,
+        finished_processing: bool
+):
+    """Increments repeated counter in a task
+
+    :param transaction: transaction
+    :param event_reference: event document reference
+    :param finished_processing: flags whether the repeated task processing has been finished
+    """
+    event = event_reference.get().to_dict()
+    transaction.update(event_reference, {
+        'repeatedCount': event.get('repeatedCount', 0) + 1,
+        'processed': finished_processing,
+    })
