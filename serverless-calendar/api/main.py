@@ -119,6 +119,7 @@ class CalendarTask:
         doc: dict = {
             **self._dict_base,
             'processed': False,
+            'execution_counter': 0,
             'schedule_time': self.schedule_time.isoformat(),
         }
         doc['http_request']['body'] = self.payload_dict

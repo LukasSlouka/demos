@@ -147,7 +147,7 @@ def calendar_event_callback(request: Request):
 
     # increment repeated counter
     transaction = db.transaction()
-    increment_repeated_counter(
+    increment_execution_counter(
         transaction,
         db.collection('events').document(task_id),
         finished_processing
@@ -166,12 +166,12 @@ def calendar_event_callback(request: Request):
 
 
 @transactional
-def increment_repeated_counter(
+def increment_execution_counter(
         transaction: Transaction,
         event_reference: DocumentReference,
         finished_processing: bool
 ):
-    """Increments repeated counter in a task
+    """Increments execution counter in a task
 
     :param transaction: transaction
     :param event_reference: event document reference
@@ -179,6 +179,6 @@ def increment_repeated_counter(
     """
     event = event_reference.get().to_dict()
     transaction.update(event_reference, {
-        'repeatedCount': event.get('repeatedCount', 0) + 1,
+        'execution_counter': event.get('execution_counter', 0) + 1,
         'processed': finished_processing,
     })
