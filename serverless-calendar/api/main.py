@@ -78,7 +78,7 @@ class CalendarTask:
 
     @property
     def schedule_time(self) -> datetime:
-        return self.timestamp or datetime.datetime.now() + datetime.timedelta(seconds=self.timedelta)
+        return (self.timestamp or datetime.datetime.now()) + datetime.timedelta(seconds=self.timedelta or 0)
 
     @property
     def schedule_time_proto(self) -> Timestamp:
