@@ -160,7 +160,7 @@ def calendar_event_callback(request: Request):
             text=":exclamation: {message} :exclamation: (ID: {id}){repetition}".format(
                 message=task_message,
                 id=task_id,
-                repetition=' [repetitions left: {}]'.format(task_repeat) if task_repeat else ''
+                repetition=' [repetitions left: {}]'.format(task_repeat - 1) if task_repeat else ''
             )
         )
 
